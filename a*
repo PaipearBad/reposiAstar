@@ -13,6 +13,28 @@ if (cluster.isMaster) {
     const worker = cluster.fork(); 
     worker.send(chunks[i]);
   }
+main.js
+const { Worker, isMainThread } = require('worker_threads');
+const numThreads = [1, 2, 4, 8]; 
+const repetitions = 5;
+const graphSize = 1000;
+const numEdges = 5000;
+const heuristicFunction = () => 1;
+for (const numThread of numThreads) {
+    const workers = [];
+    for (let i = 0; i < repetitions; i++) {
+        const worker = new Worker('./aStarAlgorithm.js', {
+            workerData: { graphSize, numEdges, heuristicFunction, numThread },
+        });
+        worker.on('message', (message) => {
+            console.log(`Результат для ${numThread} потоків (повтор ${i + 1}):`, message);
+        });
+        workers.push(worker);
+    }
+    workers.forEach((worker) => {
+        worker.postMessage('start');
+    });
+}
   const results = [];
   for (const id in cluster.workers) {
     cluster.workers[id].on('message', (message) => {
